@@ -60,7 +60,7 @@ class App():
 
     def __init__(self):
         self.root = tk.Tk()                         #Bind Tkinter to the root object
-        #self.root.attributes('-fullscreen', True)
+        self.root.attributes('-fullscreen', True)
         self.l_mode = tk.Label(text="")
         self.l_mode.pack()
         self.l_alarm = tk.Label(text="")
@@ -69,6 +69,7 @@ class App():
         self.l_pressure.pack()
         self.l_ftol = tk.Label(text="")
         self.l_ftol.pack()
+
 
         self.label1 = tk.Label(text="")
         self.label1.pack()
@@ -105,7 +106,8 @@ class App():
         self.instrument.serial.bytesize = 8
         self.instrument.serial.parity = serial.PARITY_NONE
         self.instrument.serial.stopbits = 1
-        self.instrument.serial.timeout = 0.05  # seconds
+        self.instrument.serial.timeout = 0.08  # seconds
+        #self.instrument.debug = True
         time.sleep(2)
 
     def to_hpa(self, pressure):
@@ -194,6 +196,7 @@ class App():
         self.l_pressure.config(text="PAW: " + str(self.pressure) + "hPa")
         self.l_ftol.config(text="FTOL: " + str(self.ftol) + "bpm")
 
+
     def update_alarm(self):
         res = ""
         if( (self.alarm & self.CONST_ALARM_HIGH_PRESSURE) == self.CONST_ALARM_HIGH_PRESSURE):
@@ -208,15 +211,20 @@ class App():
             res += "High Frequency! "
         self.l_alarm.config(text=res)
 
-
-
     def update_clock(self):
-        self.timer1 = self.timer1 + 1
-        if( self.timer1 >= 10):
-            self.timer1 = 0
-            self.read_parameters()
-        self.read_regular()
-        self.update_alarm()
+        try:
+            if (self.instrument.serial._isOpen):
+                self.timer1 = self.timer1 + 1
+                if( self.timer1 >= 10):
+                    self.timer1 = 0
+                    self.read_parameters()
+                self.read_regular()
+                self.update_alarm()
+            else:
+                self.instrument.serial.open()
+        except Exception as e:
+            print(e)
+
         self.root.after(100, self.update_clock)
 
     def enter_cmv_mode(self):
